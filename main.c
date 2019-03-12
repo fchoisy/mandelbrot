@@ -34,15 +34,6 @@ struct complex comp_sqr(struct complex const z)
 	return s;
 }
 
-// struct complex zn_rec(int n, struct complex c)
-// {
-// 	if (n <= 0)
-// 	{
-// 		return 0;
-// 	}
-// 	return com_sum(com_sqr(zn_rec(n-1, c)), c);
-// }
-
 struct complex z_nplus1(struct complex const z_n, struct complex const c)
 {
 	return comp_sum(comp_sqr(z_n), c);
@@ -68,38 +59,24 @@ struct result check(struct complex const c)
 	return res;
 }
 
-int main() {
-	SDL_Init(SDL_INIT_VIDEO);
-
-	SDL_Window* pWindow = NULL;
-	pWindow = SDL_CreateWindow("Mandelbrot",
-														SDL_WINDOWPOS_UNDEFINED,
-													  SDL_WINDOWPOS_UNDEFINED,
-							   						WIN_SIZE,
-							   						WIN_SIZE,
-							   						SDL_WINDOW_SHOWN);
-	if (pWindow == NULL)
-	{
-		fprintf(stderr, "%s\n", SDL_GetError());
-		return EXIT_FAILURE;
-	}
-
-	SDL_Renderer * pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED);
-	if (pRenderer == NULL)
-	{
-		fprintf(stderr, "%s\n", SDL_GetError());
-		return EXIT_FAILURE;
-	}
-
+void draw_mandelbrot(SDL_Renderer * pRenderer,
+										float x1, float y1,
+										float x2, float y2)
+{
 	SDL_SetRenderDrawColor(pRenderer, 0, 0, 0, 0);
 	SDL_RenderClear(pRenderer);
 	SDL_RenderPresent(pRenderer);
 
 // MAIN PROGRAM
-	float rcoeff = 2.7 / WIN_SIZE;
-	float icoeff = 2.4 / WIN_SIZE;
-	float roffset = -2.1;
-	float ioffset = -1.2;
+float rcoeff = (x2 - x1) / WIN_SIZE;
+float icoeff = (y2 - y1) / WIN_SIZE;
+float roffset = x1;
+float ioffset = y1;
+
+	// float rcoeff = 2.7 / WIN_SIZE;
+	// float icoeff = 2.4 / WIN_SIZE;
+	// float roffset = -2.1;
+	// float ioffset = -1.2;
 	for (int x = 0; x < WIN_SIZE; x++)
 	{
 		for (int y = 0; y < WIN_SIZE; y++)
@@ -132,6 +109,35 @@ int main() {
 	}
 	printf("DONE\n");
 	SDL_RenderPresent(pRenderer);
+}
+
+int main() {
+	SDL_Init(SDL_INIT_VIDEO);
+
+	SDL_Window* pWindow = NULL;
+	pWindow = SDL_CreateWindow("Mandelbrot",
+														SDL_WINDOWPOS_UNDEFINED,
+													  SDL_WINDOWPOS_UNDEFINED,
+							   						WIN_SIZE,
+							   						WIN_SIZE,
+							   						SDL_WINDOW_SHOWN);
+	if (pWindow == NULL)
+	{
+		fprintf(stderr, "%s\n", SDL_GetError());
+		return EXIT_FAILURE;
+	}
+
+	SDL_Renderer * pRenderer = SDL_CreateRenderer(pWindow, -1, SDL_RENDERER_ACCELERATED);
+	if (pRenderer == NULL)
+	{
+		fprintf(stderr, "%s\n", SDL_GetError());
+		return EXIT_FAILURE;
+	}
+	float x1 = -2.1;
+	float y1 = -1.2;
+	float x2 = 0.6;
+	float y2 = 1.2;
+	draw_mandelbrot(pRenderer, x1, y1, x2, y2);
 
 // WAIT TILL QUIT
 	SDL_Event event;
@@ -141,6 +147,24 @@ int main() {
 		SDL_WaitEvent(&event);
 		switch (event.type)
 		{
+			int mouse_x = 0;
+			int mouse_y = 0;
+			case SDL_MOUSEBUTTONDOWN:
+				SDL_GetMouseState(&mouse_x, &mouse_y);
+				float rcoeff = (x2 - x1) / WIN_SIZE;
+				float icoeff = (y2 - y1) / WIN_SIZE;
+				float roffset = x1;
+				float ioffset = y1;
+				float real = ((float)mouse_x) * rcoeff + roffset;
+				float img = ((float)mouse_y) * icoeff + ioffset;
+				printf("OLD : %f %f %f %f\n", x1, y1, x2, y2);
+				x1 = real - (x2 - x1) / 4;
+				y1 = img - (y2 - y1) / 4;
+				x2 = real + (x2 - x1) / 4;
+				y2 = img + (y2 - y1) / 4;
+				printf("NEW : %f %f %f %f\n", x1, y1, x2, y2);
+				draw_mandelbrot(pRenderer, x1, y1, x2, y2);
+				break;
 			case SDL_QUIT:
 				quit = 1;
 				break;
@@ -150,5 +174,5 @@ int main() {
 	SDL_DestroyRenderer(pRenderer);
 	SDL_DestroyWindow(pWindow);
 	SDL_Quit();
-	return 0;
+	return EXIT_SUCCESS;
 }
